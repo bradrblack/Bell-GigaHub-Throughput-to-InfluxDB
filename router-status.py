@@ -44,16 +44,23 @@ y_ssl=VALIDATE_SSL_CERT) as client:
 
 #        # Retrieve values via XPath notation, output is a dict
         try:
-            summary = await client.get_value_by_xpath("Device/Ethernet/Interface
-s/Interface[5]")
+            summary = await client.get_value_by_xpath("Device/Optical/Interfaces")
         except UnknownPathException as exception:
             print("The xpath does not exist.")
 
-        bytes_sent = summary['interface']['stats']['bytes_sent']
-        bytes_received = summary['interface']['stats']['bytes_received']
+        bytes_sent = summary[0]['stats']['bytes_sent']
+        bytes_received = summary[0]['stats']['bytes_received']
 
-        r = influxdb_client.Point("bytes_received").field("value", bytes_receive
-d)
+#        # Retrieve values via XPath notation, output is a dict
+        try:
+            summary = await client.get_value_by_xpath("Device/Ethernet/Interfaces/Interface[5]")
+        except UnknownPathException as exception:
+            print("The xpath does not exist.")
+
+        bytes_sent_10g = summary['interface']['stats']['bytes_sent']
+        bytes_received_10g = summary['interface']['stats']['bytes_received']
+
+        r = influxdb_client.Point("bytes_received").field("value", bytes_received)
 # --- Write the Data Point ---
     try:
         write_api.write(bucket=bucket, org=org, record=r)
@@ -63,6 +70,19 @@ d)
     s = influxdb_client.Point("bytes_sent").field("value", bytes_sent)
     try:
         write_api.write(bucket=bucket, org=org, record=s)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    r_10g = influxdb_client.Point("bytes_received_10g").field("value", bytes_received_10g)
+# --- Write the Data Point ---
+    try:
+        write_api.write(bucket=bucket, org=org, record=r_10g)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    s_10g = influxdb_client.Point("bytes_sent_10g").field("value", bytes_sent_10g)
+    try:
+        write_api.write(bucket=bucket, org=org, record=s_10g)
     except Exception as e:
         print(f"An error occurred: {e}")
 
